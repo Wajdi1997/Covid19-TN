@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" charset="utf-8">
+    <title>Title</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.0/d3-tip.js"
+            integrity="sha512-9WNL1D7EK7WwRB4smgvl1S2wEGeWP+xHjxEhzyUjasZZQGDUEPHBEkXgVKNcwxqqjzA7CnIEz/MhxiU79IdG1A=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="//d3js.org/d3-geo-projection.v1.min.js"></script>
+    <script src="//d3js.org/topojson.v2.min.js"></script>
+    <style>
+
+        .graticule {
+            fill: none;
+            stroke: #777;
+            stroke-width: .5px;
+            stroke-opacity: .5;
+        }
+
+        .sphere {
+            fill: #7BB5FF;
+        }
+
+        .gradient {
+            fill: url(#gradient);
+        }
+
+        .country {
+            /*fill: #404F24;*/
+            fill-opacity: 0.7;
+            stroke: #eee;
+            stroke-width: 0.2;
+        }
+    </style>
+    <link rel="stylesheet" href="dashboard-style.css">
+</head>
+<body>
+<div class="navbar">
+
+    <a class="home" href="#home"><img src="./assets/home-logo.svg" class="home-icon">Home</a>
+
+
+    <div class="navbar-right">
+        <a class="about"
+           href="http://localhost:63342/covid-data-visualization/frontend/about.html?_ijt=n268vs1vicos2gir9rr386kr3b"><img
+                src="./assets/about-logo.svg" class="about-icon">About</a>
+        <a class="github" href="https://github.com/oussama-chaabouni/covid-data-visualization" target="_blank"><img
+                src="./assets/github-logo.svg" class="github-icon">Github</a>
+
+    </div>
+
+    <a class="menu"><img src="./assets/menu.svg" id="menu-icon"></a>
+</div>
+
+<div class="overlay">
+    <a class="close">&times;</a>
+    <div class="overlay__content">
+        <a class="about-mobile"><img src="./assets/about-logo.svg" class="about-icon">About</a>
+        <a class="github-mobile" href="https://github.com/oussama-chaabouni/covid-data-visualization"
+           target="_blank"><img src="./assets/github-logo.svg" class="github-icon">Github</a>
+    </div>
+</div>
+
+<div class="page-title">
+    <span class="title">Dashboard</span>
+    <span class="title-text">Explore the COVID-19 data</span>
+
+
+</div>
+<div class="radio-selection">
+    <div id="world-country-container">
+        <input type="radio" class="choice"
+               value="world" name="selec" checked id="radio1" onclick="test()">
+        <label class="world-text">World Map</label><br>
+
+        <input type="radio" class="choice"
+               value="country" name="selec" id="radio2">
+        <label class="country-text">Select a Country</label>
+        <select id="cities">
+
+            <option value=""></option>
+        </select>
+    </div>
+    <div class="date-selection">
+        <label id="start-label">Date From</label>
+
+        <input type="date" id="start" name="trip-start"
+               value="2020-07-22"
+               min="2020-01-01" max="2021-12-31">
+
+        <label id="end-label">Date To</label>
+
+        <input type="date" id="end" name="trip-start"
+               min="2020-01-01">
+    </div>
+</div>
+<div class="filter">
+    <div class="filter-text">
+        <span class="filter-data">Filter Data</span>
+    </div>
+    <div>
+        <div class="selected" value="total_cases">
+            Total Cases
+        </div>
+        <div class="options-container"></div>
+    </div>
+
+
+</div>
+
+<div id="covid"></div>
+<script src="globe.js"></script>
+<script src="script.js"></script>
+
+<script>
+    const doc = document;
+    const menuOpen = doc.querySelector('.menu');
+    const menuClose = doc.querySelector('.close');
+    const overlay = doc.querySelector('.overlay');
+
+    function refetchData(v) {
+        console.log(v)
+    }
+
+    document.getElementById('end').valueAsDate = new Date();
+    menuOpen.addEventListener('click', () => {
+        overlay.classList.add('overlay--active');
+    });
+
+    menuClose.addEventListener('click', () => {
+        overlay.classList.remove('overlay--active');
+    });
+    var begin = document.getElementById('start')
+    var end = document.getElementById('end')
+    var obj1 = {}
+    var obj2 = {}
+    loadWorldData("total_cases", begin.value, end.value)
+    var g = createMap(null, obj1)
+
+    function loadWorldData(crit, begin, end) {
+        begin = document.getElementById('start').value
+        end = document.getElementById('end').value
+        d3.json('http://localhost:7070/worldData').then(data => {
+
+            Object.keys(data).forEach(elem => {
+                obj2[elem] = data[elem].data.map((item) => Object.assign({}, item, {date: new Date(item.date)}))
+                obj2[elem] = data[elem].data.filter(item => item.date > begin && item.date < end)
+            })
+            Object.keys(obj2).forEach(elem => {
+                var len = obj2[elem].length
+                for (var i = 0; i < len; i++) {
+                    obj1[elem] = (obj2[elem])
+                    obj1[elem][i] = (obj2[elem][i][crit])
+                }
+            })
+            "OWID_AFR OWID_ASI OWID_EUR OWID_EUN OWID_INT OWID_KOS OWID_NAM OWID_CYN OWID_OCE OWID_SAM OWID_WRL".split(" ")
+                .forEach(e => delete obj1[e]);
+            //data = obj1
+
+            drawColors(g[0], g[1], obj1)
+
+        })
+
+
+    }
+
+
+    d3.json('http://localhost:7070/countries').then(function (data) {
+            var coutriesSelect = document.getElementById('cities');
+
+            Object.keys(data).forEach(item => {
+                    var op = document.createElement('option')
+                    op.setAttribute('value', item);
+                    op.append(document.createTextNode(data[item]));
+                    coutriesSelect.appendChild(op);
+                },
+            );
+
+        },
+    )
+
+
+    begin.onchange = function () {
+        begin = document.getElementById('start')
+        end = document.getElementById('end')
+        if (document.getElementById('radio1').checked === true) {
+            loadWorldData(document.querySelector(".selected").getAttribute('value'), begin.value, end.value)
+            d3.selectAll(".d3-tip n").remove()
+            d3.selectAll(".d3-tip").remove()
+
+        } else {
+
+            filterData(new Date(begin.value), new Date(end.value), document.querySelector(".selected").getAttribute('value'))
+        }
+    }
+
+
+    end.onchange = function () {
+        begin = document.getElementById('start')
+        end = document.getElementById('end')
+        if (document.getElementById('radio1').checked === true) {
+            loadWorldData(document.querySelector(".selected").getAttribute('value'), begin.value, end.value)
+            d3.selectAll(".d3-tip n").remove()
+            d3.selectAll(".d3-tip").remove()
+        } else {
+
+
+            filterData(new Date(begin.value), new Date(end.value), document.querySelector(".selected").getAttribute('value'))
+        }
+    }
+    d3.json('http://localhost:7070/criteria').then(function (data) {
+
+
+        var criteria = document.getElementsByClassName('options-container');
+        data.forEach((item, index) => {
+                var btn = document.createElement('div')
+                btn.className = 'option'
+                var input = document.createElement('input')
+                input.setAttribute('type', 'radio')
+                input.setAttribute('name', 'category')
+                input.id = item
+                input.className = "radio"
+                var label = document.createElement('label')
+                label.setAttribute('for', item)
+                label.innerHTML = item.replaceAll('_', ' ')
+                criteria[0].appendChild(btn)
+                btn.appendChild(input)
+                btn.appendChild(label)
+            },
+        )
+
+        const selected = document.querySelector(".selected");
+
+        const optionsContainer = document.querySelector(".options-container");
+
+        const optionsList = document.querySelectorAll(".option");
+
+
+        selected.addEventListener("click", () => {
+            optionsContainer.classList.toggle("active");
+        });
+        var radios = document.querySelectorAll('input[type=radio][name="selec"]');
+
+        optionsList.forEach(o => {
+            o.addEventListener("click", () => {
+                var val = (o.querySelector("label").innerHTML).replaceAll(' ', '_')
+                selected.innerHTML = o.querySelector("label").innerHTML;
+                selected.setAttribute('value', val)
+                var crit = 'total_vaccinations'
+
+                if (document.getElementById('radio1').checked === true) {
+                    begin = document.getElementById('start')
+                    end = document.getElementById('end')
+                    loadWorldData(val, begin.value, end.value)
+                    if (document.contains(document.getElementsByClassName("error")[0])) {
+                        document.getElementsByClassName("error")[0].remove();
+                    }
+                d3.selectAll(".d3-tip n").remove()
+                d3.selectAll(".d3-tip").remove()
+                } else if (document.getElementById('radio2').checked === true) {
+                    if (document.getElementById('cities').value !== '')
+
+                        begin = document.getElementById('start')
+                    end = document.getElementById('end')
+                    filterData(new Date(begin.value), new Date(end.value), val)
+                    d3.select(".svg_globe").remove();
+
+                }
+                optionsContainer.classList.remove("active");
+
+            });
+
+        });
+
+
+        document.getElementById('cities').onchange = function (event) {
+            begin = document.getElementById('start')
+            end = document.getElementById('end')
+            selectData(event.target.value)
+            selected.innerHTML = "Total Cases"
+            selected.setAttribute('value', "total_cases")
+            document.getElementById('radio2').checked = true
+        };
+
+    })
+    const selected = document.querySelector(".selected");
+
+    function test() {
+        var crit = 'total_cases'
+
+        var d = document.getElementsByClassName('rect-d')[0];
+        if (document.contains(document.getElementsByClassName("error")[0])) {
+            document.getElementsByClassName("error")[0].remove();
+        } else {
+            d3.select("svg").remove();
+            d.style.background = "transparent"
+            d3.select("h3").remove()
+
+        }
+        loadWorldData("total_cases", begin.value, end.value)
+        var g = createMap(null, obj1)
+        selected.innerHTML = "Total Cases",
+            selected.setAttribute('value', "total_cases")
+
+    }
+</script>
+<footer>
+    <p>Data Source</p>
+    <p><a href="https://ourworldindata.org/" target="_blank">ourworldindata.org</a></p>
+</footer>
+</body>
+</html>

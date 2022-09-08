@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.0/d3-tip.js" integrity="sha512-9WNL1D7EK7WwRB4smgvl1S2wEGeWP+xHjxEhzyUjasZZQGDUEPHBEkXgVKNcwxqqjzA7CnIEz/MhxiU79IdG1A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+
+        .line, .circles {
+            fill: none;
+            clip-path: url(#clip);
+        }
+
+        .overlay {
+            fill: none;
+            pointer-events: all;
+        }
+
+        .d3-tip {
+            line-height: 1;
+            font-weight: bold;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 2px;
+            max-width: 100px;
+        }
+
+        /* Creates a small triangle extender for the tooltip */
+        .d3-tip:after {
+            box-sizing: border-box;
+            display: inline;
+            font-size: 10px;
+            width: 100%;
+            line-height: 1;
+            color: rgba(0, 0, 0, 0.8);
+            content: "\25BC";
+            position: absolute;
+            text-align: center;
+        }
+
+        /* Style northward tooltips differently */
+        .d3-tip.n:after {
+            margin: -1px 0 0 0;
+            top: 100%;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+
+
+<div id="d3-container"></div>
+<div id="d3-container1"></div>
+<div id="covid" ></div>
+
+<div id="my_dataviz"></div>
+
+
+
+
+
+<script src="./script.js"></script>
+
+
+
+</body>
+
+</html>
+
